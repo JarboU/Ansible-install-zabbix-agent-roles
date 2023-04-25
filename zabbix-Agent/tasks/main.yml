@@ -1,0 +1,38 @@
+---
+- name: Copy zabbix soft
+  copy: src={{item}} dest=/data/soft/
+  with_items:
+    - zabbix_agent-6.2.6-linux-3.0-amd64-static.tar.gz
+
+- name: Mkdir zabbix directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /data/zabbix_agentd
+    - /data/zabbix_agentd/run
+    - /data/zabbix_agentd/logs
+    - /data/zabbix_agentd/conf
+    - /data/zabbix_agentd/conf/zabbix_agentd.conf.d
+
+- name: Install zabbix agent
+  unarchive:
+    src: /data/soft/zabbix_agent-6.2.6-linux-3.0-amd64-static.tar.gz
+    dest: /data/zabbix_agentd
+    remote_src: yes
+    # `remote_src: yes 参数，以指示 Ansible 在远程服务器上查找源文件
+
+- name: Copy zabbix config file
+  template: src=zabbix_agentd_conf.ja2 dest=/data/zabbix_agentd/conf/zabbix_agentd.conf mode='0644' force=yes
+
+- name: Copy zabbix protect script
+  template: src=agent_protect.sh dest=/data/zabbix_agentd/
+
+- name: Zabbix crontab
+  cron:
+    name: Zabbix 
+    minute: "*/15"
+    job: "sh /data/zabbix_agentd/agent_protect.sh /data/zabbix_agentd > /dev/null 2>&1"
+
+- name: Start Zabbix agent
+  shell: /data/zabbix_agentd/sbin/zabbix_agentd -c /data/zabbix_agentd/conf/zabbix_agentd.conf

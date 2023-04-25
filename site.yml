@@ -1,0 +1,8 @@
+---
+- name: Install zabbix agent 6.2.5
+  hosts: test
+  remote_user: jarbo
+  vars:
+    - zabbix_server: 10.10.10.80,10.10.10.90
+  roles: 
+    - zabbix-Agent
